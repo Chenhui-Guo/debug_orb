@@ -10,9 +10,8 @@
 #include <signal.h>
 
 #include "opencv2/opencv.hpp"
-// #include <opencv2/core/core.hpp>
-// #include <opencv2/highgui/highgui.hpp>
 
+// 管道配置
 std::string gstreamer_pipeline (int capture_width, int capture_height, int display_width, int display_height, int framerate, int flip_method) {
     return "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=(int)" + std::to_string(capture_width) + ", height=(int)" +
            std::to_string(capture_height) + ", format=(string)NV12, framerate=(fraction)" + std::to_string(framerate) +
@@ -20,6 +19,7 @@ std::string gstreamer_pipeline (int capture_width, int capture_height, int displ
            std::to_string(display_height) + ", format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink";
 }
 
+// 信号回调函数
 void signalHandler(int signum)
 {
     ROS_INFO("%s is received, Terminating the node...", strsignal(signum));
@@ -47,6 +47,7 @@ int main(int argc, char **argv)
     image_transport::ImageTransport it(nh);
     image_transport::Publisher pub = it.advertise("/camera/image_raw", 1);
 
+    // 开启 csi 摄像头
     cv::VideoCapture capture(pipeline, cv::CAP_GSTREAMER);
     if (!capture.isOpened()){
         ROS_ERROR("Camera failed to turn on!!");
@@ -74,5 +75,6 @@ int main(int argc, char **argv)
         // 保证在设定的 rate 进行
         loop_rate.sleep();
     }
-    capture.release();
+    // 释放管道
+    capture.release();  
 }

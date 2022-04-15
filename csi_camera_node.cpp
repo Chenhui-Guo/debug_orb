@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <fstream>
 #include <chrono>
+#include <string>
 
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
@@ -22,8 +23,6 @@ std::string gstreamer_pipeline (int capture_width, int capture_height, int displ
 void signalHandler(int signum)
 {
     ROS_INFO("%s is received, Terminating the node...", strsignal(signum));
-    cap.release();
-    cv::destroyAllWindows();
     ros::shutdown();
     exit(signum);
 }
@@ -34,9 +33,9 @@ int main(int argc, char **argv)
     int capture_height = 480;
     int display_width = 680;
     int display_height = 480;
-    int framerate = 10;
+    int framerate = 15;
     int flip_method = 0;
-    string pipeline = gstreamer_pipeline(capture_width,
+    std::string pipeline = gstreamer_pipeline(capture_width,
                                          capture_height,
                                          display_width,
                                          display_height,
@@ -46,38 +45,34 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "csi_camera"); // 初始化ROS节点 名为 Mono
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh);
-    image_transport::Pulisher pub = it.advertise("/camera/image_raw", 1);
+    image_transport::Publisher pub = it.advertise("/camera/image_raw", 1);
 
     cv::VideoCapture capture(pipeline, cv::CAP_GSTREAMER);
     if (!capture.isOpened()){
         ROS_ERROR("Camera failed to turn on!!");
         ros::shutdown();
-        exit(-1)
+        exit(-1);
     }
     ROS_INFO("The camera has been opened!!");
 
     cv::Mat image;
-    cv::namedWindow("CSI Camera", cv::WINDOW_AUTOSIZE);
-
     sensor_msgs::ImagePtr msg;
-    ros::Rate loop_rate(10);  // 20帧
+    ros::Rate loop_rate(15);  // 20帧
     signal(SIGINT, signalHandler);
     while (ros::ok()){
 
         /* 将 OpenCV 的 MAT 格式转为 ROS 的ImagePtr 格式 */
         capture >> image;
-        cv::imshow("CSI Camera", image);
         if (!image.empty()){
             // 封装消息内容
             msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
             // 发布消息
             pub.publish(msg);
-            ROS_INFO("Sending...");
         }
         // 可接收回调函数 
         ros::spinOnce();
-
         // 保证在设定的 rate 进行
         loop_rate.sleep();
     }
+    capture.release();
 }

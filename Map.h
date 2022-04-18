@@ -70,6 +70,7 @@ public:
 protected:
     std::set<MapPoint*> mspMapPoints;
     std::set<KeyFrame*> mspKeyFrames;
+    std::map<MapPoint *, unsigned long int> mmpnMapPointsIdx;
 
     std::vector<MapPoint*> mvpReferenceMapPoints;
 

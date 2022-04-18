@@ -130,6 +130,17 @@ void Map::clear()
     mvpKeyFrameOrigins.clear();
 }
 
+void Map::GetMapPointsIdx()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    unsigned long int i = 0;
+    for (auto mp : mspMapPoints)
+    {
+        mmpnMapPointsIdx[mp] = i;
+        i += 1;
+    }
+}
+
 void Map::SaveMapPoint(ofstream &f, MapPoint *mp)
 {
     //保存当前MapPoint的ID和世界坐标值
